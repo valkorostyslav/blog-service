@@ -2,12 +2,14 @@ from django.shortcuts import get_object_or_404
 from ninja import NinjaAPI, Router
 import requests
 from comments.api.schemas import CommentSchema, CreateCommentSchema, UpdateCommentSchema
-from comments.models import Comment
+from comments.models import Comment, CommentReply
 from posts.models import Post
 from decouple import config
 import google.generativeai as genai
 import os
 from datetime import datetime
+from celery import shared_task
+from user.models import CustomUser
 
 router = Router()
 
@@ -23,16 +25,23 @@ def check_for_obscene_language(text: str):
     else:
         print("Error:", response.status_code, response.text)
         return None
-    
-def generate_auto_reply(comment_content, user):
 
+@shared_task
+def generate_auto_reply(comment_id, comment_content, user_id):
+    print("Its working!!!!")
     genai.configure(api_key=GEMINI_API_KEY)
     
+    comment = get_object_or_404(Comment, id=comment_id)
 
     model = genai.GenerativeModel("gemini-1.5-flash")
+    user = CustomUser.objects.get(id=user_id)
     response = model.generate_content(f"Я створюю сайт на якому можна створювати пости і коментувати ці пости, мені потрібно, щоб ти автоматично відповів на коментар: {comment_content} від користувача: {user}. Напиши тільки одною відповіддю, можеш писати розширено, придержуючись одної думки!")
-    
-    return response.text
+    CommentReply(
+        comment=comment,
+        content=response.text,
+        is_ai=True,
+    )
+    # return response.text
 
 @router.post("/create_comment", response=CommentSchema)  
 def create_comment(request, payload: CreateCommentSchema):
@@ -45,36 +54,34 @@ def create_comment(request, payload: CreateCommentSchema):
         post=post,
         user=request.user,
         content=profanity_check['censored']
-    )
-        return {
+        )
+    else:
+        comment = Comment.objects.create(
+            post=post,
+            user=request.user,
+            content=payload.content
+        )
+        
+    auto_reply_text = None
+    if post.user.auto_reply_enabled:
+        delay_minutes = post.user.auto_reply_delay  
+        # auto_reply_text = generate_auto_reply(comment.content, request.user)
+        
+        # Виклик Celery таски із затримкою
+        generate_auto_reply.apply_async(
+            args=[comment.id, comment.content, request.user.id], 
+            countdown=delay_minutes * 60
+        )
+
+    return {
             "post_id": post.id,
             "user_id": request.user.id,
             "content": profanity_check['censored'],
-            "ai_response": None,
+            'status': "success",
             "created_at": datetime.now(),
             "updated_at": datetime.now(),
             "message": "Comment contains profanity and was censored."
         }
-
-    comment = Comment.objects.create(
-        post=post,
-        user=request.user,
-        content=payload.content
-    )
-    auto_reply_text = None
-    if post.user.auto_reply_enabled:  
-        auto_reply_text = generate_auto_reply(comment.content, request.user)
-
-        Comment.objects.create(content=auto_reply_text, user=request.user, post=comment.post)
-
-    return CommentSchema(
-        post_id=comment.post.id,
-        user_id=comment.user.id,
-        content=comment.content,
-        ai_response=auto_reply_text,  # AI-відповідь або None
-        created_at=comment.created_at,
-        updated_at=comment.updated_at
-    )
 
 @router.get('/comment/{post_id}', response=CommentSchema)
 def get_comment(request, post_id: int):
