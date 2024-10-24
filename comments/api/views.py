@@ -28,20 +28,18 @@ def check_for_obscene_language(text: str):
 
 @shared_task
 def generate_auto_reply(comment_id, comment_content, user_id):
-    print("Its working!!!!")
     genai.configure(api_key=GEMINI_API_KEY)
     
     comment = get_object_or_404(Comment, id=comment_id)
 
     model = genai.GenerativeModel("gemini-1.5-flash")
     user = CustomUser.objects.get(id=user_id)
-    response = model.generate_content(f"Я створюю сайт на якому можна створювати пости і коментувати ці пости, мені потрібно, щоб ти автоматично відповів на коментар: {comment_content} від користувача: {user}. Напиши тільки одною відповіддю, можеш писати розширено, придержуючись одної думки!")
+    response = model.generate_content(f"I am creating a website where users can create posts and comment on these posts. I need you to automatically reply to the comment: {comment_content} from the user: {user}. Please write only one response and feel free to elaborate while staying on the same topic!")
     CommentReply(
         comment=comment,
         content=response.text,
         is_ai=True,
     )
-    # return response.text
 
 @router.post("/create_comment", response=CommentSchema)  
 def create_comment(request, payload: CreateCommentSchema):
@@ -62,12 +60,9 @@ def create_comment(request, payload: CreateCommentSchema):
             content=payload.content
         )
         
-    auto_reply_text = None
     if post.user.auto_reply_enabled:
         delay_minutes = post.user.auto_reply_delay  
-        # auto_reply_text = generate_auto_reply(comment.content, request.user)
         
-        # Виклик Celery таски із затримкою
         generate_auto_reply.apply_async(
             args=[comment.id, comment.content, request.user.id], 
             countdown=delay_minutes * 60
@@ -76,11 +71,10 @@ def create_comment(request, payload: CreateCommentSchema):
     return {
             "post_id": post.id,
             "user_id": request.user.id,
-            "content": profanity_check['censored'],
+            "content": profanity_check['censored'] if profanity_check['has_profanity'] else payload.content,
             'status': "success",
             "created_at": datetime.now(),
             "updated_at": datetime.now(),
-            "message": "Comment contains profanity and was censored."
         }
 
 @router.get('/comment/{post_id}', response=CommentSchema)
@@ -88,7 +82,7 @@ def get_comment(request, post_id: int):
     comments = Comment.objects.filter(post=post_id)
     return comments
 
-@router.put('/comment/{comment_id}', response=CommentSchema)
+@router.put('/comment/{comment_id}', response=dict)
 def update_comment(request, comment_id: int, payload: UpdateCommentSchema):
     comment = get_object_or_404(Comment, id=comment_id)
 
@@ -107,7 +101,7 @@ def update_comment(request, comment_id: int, payload: UpdateCommentSchema):
     comment.save()
     return comment
 
-@router.delete("/comment/{comment_id}", response=CommentSchema)
+@router.delete("/comment/{comment_id}", response=dict)
 def delete_comment(request, comment_id: int):
     comment = get_object_or_404(Comment, id=comment_id)
     comment.delete()

@@ -77,7 +77,7 @@ def create_post(request, payload: CreatePostSchema):
             "censored": content_check['censored']
         }
     
-    user = request.auth  # Assuming request.auth contains the authenticated user from JWTAuth
+    user = request.auth
     post = Post.objects.create(user=user, **payload.dict())
     return PostSchema.from_orm(post).dict()
 
@@ -86,7 +86,7 @@ def update_post(request, post_id: int, payload: UpdatePostSchema):
     try:
         post = Post.objects.get(id=post_id)
         
-        # Перевірка на наявність нецензурної лексики в заголовку та контенті
+
         title_check = check_for_obscene_language(payload.title)
         content_check = check_for_obscene_language(payload.content)
 
@@ -104,7 +104,6 @@ def update_post(request, post_id: int, payload: UpdatePostSchema):
                 "censored": content_check['censored']
             }
         
-        # Оновлення поста
         for attr, value in payload.dict(exclude_none=True).items():
             setattr(post, attr, value)
 

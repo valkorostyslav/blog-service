@@ -16,9 +16,9 @@ class Comment(models.Model):
     
 class CommentReply(models.Model):
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='replies')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)  # Користувач може бути null для AI-відповідей
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True)
     content = models.TextField(null=False)
-    is_ai = models.BooleanField(default=False)  # Додайте це поле, щоб вказати, чи відповідь від AI
+    is_ai = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

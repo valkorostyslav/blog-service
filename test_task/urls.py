@@ -16,9 +16,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from test_task.api import api  # імпортуємо головний NinjaAPI з api.py
+from test_task.api import api
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', api.urls),  # підключаємо всі API-ендпоінти до '/api/'
+    path('api/', api.urls), 
 ]
