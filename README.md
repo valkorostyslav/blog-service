@@ -80,7 +80,7 @@ To view and manage the database through the Django admin panel, you need to crea
    
 5. Log in with the superuser credentials you created, and you'll be able to view and manage the database.
 
-##Usage
+## Usage
 
 After setting up, you can access the API endpoints for managing posts and comments.
 Use tools like Postman or cURL to interact with the APIs.
