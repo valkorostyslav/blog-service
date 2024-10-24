@@ -74,7 +74,7 @@ To set up the project locally, follow these steps:
    celery -A test_task worker --loglevel=INFO --pool=solo
 
 10. (Optional) In another terminal, start the Flower server to monitor Celery tasks:
-    celery -A test_task flower
+    celery ```bash -A test_task flower
     You can view the task dashboard at http://localhost:5555/.
     
 
