@@ -74,10 +74,10 @@ To set up the project locally, follow these steps:
    celery -A test_task worker --loglevel=INFO --pool=solo
 
 10. (Optional) In another terminal, start the Flower server to monitor Celery tasks:
-    celery ```bash -A test_task flower
-    You can view the task dashboard at http://localhost:5555/.
-    
-
+     You can view the task dashboard at http://localhost:5555/.
+      ```bash
+      celery -A test_task flower
+        
 ## Viewing the Database
 
 To view and manage the database through the Django admin panel, you need to create a superuser account.
