@@ -8,7 +8,7 @@ class CustomUserAdmin(UserAdmin):
     list_filter = ('is_staff', 'is_active', 'auto_reply_enabled')
     search_fields = ('email', 'username')
     fieldsets = UserAdmin.fieldsets + (
-        (None, {'fields': ('auto_reply_enabled', 'auto_reply_delay')}),  # Додайте це поле
+        (None, {'fields': ('auto_reply_enabled', 'auto_reply_delay')}),
     )
 
 admin.site.register(CustomUser, CustomUserAdmin)
