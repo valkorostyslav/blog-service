@@ -7,10 +7,9 @@ This project is a comprehensive user comment management system that allows user 
 - [Features](#features)
 - [Technologies Used](#technologies-used)
 - [Installation](#installation)
+- [Viewing the Database](#viewing-the-database)
 - [Usage](#usage)
 - [API Endpoints](#api-endpoints)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Features
 
@@ -60,6 +59,24 @@ To set up the project locally, follow these steps:
 
 7. Run the development server:
    python manage.py runserver
+
+8. Install Redis:
+   - Download Redis from https://github.com/tporadowski/redis/releases.
+   - Extract the downloaded archive.
+   - Open the command prompt and navigate to the extracted Redis folder:
+      cd path\to\redis-server.exe
+   - Run Redis:
+     redis-server.exe
+
+9. In a new terminal, start the Celery worker:
+
+   ```bash
+   celery -A test_task worker --loglevel=INFO --pool=solo
+
+10. (Optional) In another terminal, start the Flower server to monitor Celery tasks:
+    celery -A test_task flower
+    You can view the task dashboard at http://localhost:5555/.
+    
 
 ## Viewing the Database
 
