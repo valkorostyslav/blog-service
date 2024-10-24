@@ -1,3 +1,4 @@
+from typing import List
 from django.shortcuts import get_object_or_404
 from ninja import NinjaAPI, Router
 import requests
@@ -41,7 +42,7 @@ def generate_auto_reply(comment_id, comment_content, user_id):
         is_ai=True,
     )
 
-@router.post("/create_comment", response=CommentSchema)  
+@router.post("/create_comment", response=dict)  
 def create_comment(request, payload: CreateCommentSchema):
     post = get_object_or_404(Post, id=payload.post_id)
 
@@ -77,12 +78,16 @@ def create_comment(request, payload: CreateCommentSchema):
             "updated_at": datetime.now(),
         }
 
-@router.get('/comment/{post_id}', response=CommentSchema)
+@router.get('/comment/{post_id}', response=List[dict])
 def get_comment(request, post_id: int):
     comments = Comment.objects.filter(post=post_id)
-    return comments
 
-@router.put('/comment/{comment_id}', response=dict)
+    if not comments.exists():
+        return []
+
+    return [comment.to_dict() for comment in comments]
+
+@router.put('/comment/update/{comment_id}', response=dict)
 def update_comment(request, comment_id: int, payload: UpdateCommentSchema):
     comment = get_object_or_404(Comment, id=comment_id)
 
@@ -99,27 +104,16 @@ def update_comment(request, comment_id: int, payload: UpdateCommentSchema):
         comment.content = payload.content
 
     comment.save()
-    return comment
+    return comment.to_dict()
 
-@router.delete("/comment/{comment_id}", response=dict)
+@router.delete("/comment/delete/{comment_id}", response=dict)
 def delete_comment(request, comment_id: int):
     comment = get_object_or_404(Comment, id=comment_id)
     comment.delete()
     return {"success": True}
 
-def list_comments_for_post(request, post_id: int):
-    comments = Comment.objects.filter(post_id=post_id)
-    
-    if comments.exists():
-        return {"comments": list(comments)}
-    else:
-        return {"message": "No comments found for this post."}
-
-@router.get("/users/{user_id}/comments", response=list[CommentSchema])
+@router.get("/users/{user_id}/comments", response=List[dict])
 def list_comments_for_user(request, user_id: int):
     comments = Comment.objects.filter(user_id=user_id)
     
-    if comments.exists():
-        return {"comments": list(comments)}
-    else:
-        return {"message": "No comments found for this user."}
+    return [comment.to_dict() for comment in comments] if comments.exists() else []

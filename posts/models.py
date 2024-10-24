@@ -9,5 +9,16 @@ class Post(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     is_blocked = models.BooleanField(default=False)
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "title": self.title,
+            "user_id": self.user.id,
+            "content": self.content,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "is_blocked": self.is_blocked,
+        }
+    
     def __str__(self):
         return self.title  

@@ -20,6 +20,5 @@ class CreateCommentSchema(Schema):
     content: str
     
     model_config = ConfigDict(orm_mode=True)
-    
 class UpdateCommentSchema(Schema):
     content: Optional[str] = None

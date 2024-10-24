@@ -1,4 +1,5 @@
 from datetime import datetime
+from django.shortcuts import get_object_or_404
 import requests
 from ninja import NinjaAPI, Router
 from comments.models import Comment
@@ -6,6 +7,7 @@ from posts.models import Post
 from posts.api.schemas import PostSchema, CreatePostSchema, UpdatePostSchema
 from ninja_jwt.authentication import JWTAuth
 from django.db.models import Count, Q
+from django.http import Http404
 
 router = Router()
 
@@ -49,13 +51,13 @@ def all_posts(request):
     posts = Post.objects.all()  
     return posts
 
-@router.get("/posts/{post_id}", response=PostSchema)
+@router.get("/posts/{post_id}", response=dict)
 def post(request, post_id: int):
     try:
         post = Post.objects.get(id=post_id)
-        return post
+        return post.to_dict()
     except Post.DoesNotExist:
-        return {"success": False, "message": "Post not found."}
+        return {"success": False, "detail": "Post not found."}
 
 @router.post("/posts", response=dict, auth=JWTAuth())
 def create_post(request, payload: CreatePostSchema):
@@ -84,7 +86,7 @@ def create_post(request, payload: CreatePostSchema):
 @router.put("/posts/{post_id}", response=dict)
 def update_post(request, post_id: int, payload: UpdatePostSchema):
     try:
-        post = Post.objects.get(id=post_id)
+        post = get_object_or_404(Post, id=post_id)
         
 
         title_check = check_for_obscene_language(payload.title)
@@ -108,7 +110,17 @@ def update_post(request, post_id: int, payload: UpdatePostSchema):
             setattr(post, attr, value)
 
         post.save()
-        return post
+        return {
+        "success": True,
+        "message": "Post was successfully updated.",
+        "post": {
+            "id": post.id,
+            "title": post.title,
+            "content": post.content,
+            "created_at": post.created_at.isoformat(),
+            "updated_at": post.updated_at.isoformat()
+        }
+    }
 
     except Post.DoesNotExist:
         return {"success": False, "message": "Post not found."}
