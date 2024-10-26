@@ -25,7 +25,7 @@ This project is a comprehensive user comment management system that allows user 
 
 ## Technologies Used
 
-- **Backend Framework**: Django
+- **Backend Framework**: Django, Django Ninja
 - **Database**: SQLite, Django Ninja - Fast Django REST Framework
 - **Asynchronous Task Queue**: Celery, Flower, Redis
 - **Profanity Checking**: API Ninjas
